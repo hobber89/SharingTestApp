@@ -1,5 +1,6 @@
 package com.test.sharingtestapp;
 
+import android.Manifest;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -8,8 +9,10 @@ import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.StrictMode;
 import android.view.View;
 
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -28,6 +31,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
+    private static final int PermissionsRequestId = 0;
 
     private static final int SelectFileId = 1;
 
@@ -39,6 +43,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
         setContentView(binding.getRoot());
 
         setSupportActionBar(binding.toolbar);
+        requestFilePermissions();
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
@@ -112,5 +117,15 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
         } catch(Exception error) {
             Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void requestFilePermissions() {
+        ActivityCompat.requestPermissions(this, new String[] {
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                PermissionsRequestId);
+
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
     }
 }
