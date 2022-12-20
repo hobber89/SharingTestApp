@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
                 return;
             }
 
-            Uri uri = FileProvider.getUriForFile(this, "com.test.sharingTestApp", selectedFile);
+            Uri uri = FileProvider.getUriForFile(this, "com.test.sharingtestapp.fileProvider", selectedFile);
 
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType("*/*");
