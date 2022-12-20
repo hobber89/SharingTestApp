@@ -9,6 +9,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.Environment;
 import android.os.StrictMode;
 import android.view.View;
 
@@ -25,7 +26,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity  implements View.OnClickListener {
 
@@ -34,6 +40,9 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
     private static final int PermissionsRequestId = 0;
 
     private static final int SelectFileId = 1;
+
+    private String testFileContent = "{\"testContent\": 12345}";
+    private File testFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +53,8 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
 
         setSupportActionBar(binding.toolbar);
         requestFilePermissions();
+
+        createTestFile();
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
@@ -79,11 +90,62 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
                 || super.onSupportNavigateUp();
     }
 
+    private void createTestFile() {
+        try {
+            File storageDirectory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS) + "/SharingTestApp");
+            testFile = new File(storageDirectory, "testFile.json");
+            if (testFile.exists()) {
+
+                if(readFile(testFile))
+                    return;
+
+                testFile.delete();
+            }
+
+            storageDirectory.mkdirs();
+            testFile.createNewFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(testFile));
+            writer.write(testFileContent);
+            writer.close();
+            if(!testFile.exists())
+                Toast.makeText(this, "Failed to write Testfile", Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            Toast.makeText(this, "Failed to create Testfile", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private boolean readFile(File file) {
+        StringBuilder text = new StringBuilder();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                text.append(line);
+                text.append('\n');
+            }
+            br.close();
+
+            if(text.toString().startsWith(testFileContent)) {
+                Toast.makeText(this, "Testfile already exists", Toast.LENGTH_LONG).show();
+                return true;
+            }
+            else {
+                Toast.makeText(this, "Read: " + text.toString(), Toast.LENGTH_LONG).show();
+                return false;
+            }
+        }
+        catch (IOException e) {
+            Toast.makeText(this, "Unable to read the file " + file.getName(), Toast.LENGTH_LONG).show();
+            return false;
+        }
+    }
+
     @Override
     public void onClick(View v) {
         switch(v.getId()) {
             case R.id.shareFileButton:
-                //TODO
+                shareFile(testFile);
                 break;
             case R.id.shareUrlButton:
                 selectFile();
@@ -105,6 +167,30 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
         if(requestCode == SelectFileId && resultCode == RESULT_OK) {
             Uri selectedFileUri = data.getData();
             shareUri(selectedFileUri);
+        }
+    }
+    private void shareFile(File selectedFile) {
+        try {
+            if(!selectedFile.exists())
+            {
+                Toast.makeText(this, "File does not exist!", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if(!selectedFile.canRead())
+            {
+                Toast.makeText(this, "File can not be read!", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            Uri uri = FileProvider.getUriForFile(this, "com.test.sharingTestApp", selectedFile);
+
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("*/*");
+            intent .putExtra(Intent.EXTRA_STREAM, uri);
+            startActivity(Intent.createChooser(intent , "Share..."));
+        } catch(Exception error) {
+            Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
