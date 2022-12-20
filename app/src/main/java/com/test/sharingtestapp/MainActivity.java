@@ -1,5 +1,7 @@
 package com.test.sharingtestapp;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -8,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.view.View;
 
+import androidx.core.content.FileProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -17,11 +20,16 @@ import com.test.sharingtestapp.databinding.ActivityMainBinding;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity  implements View.OnClickListener {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
+
+    private static final int SelectFileId = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,7 +77,40 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
     @Override
     public void onClick(View v) {
         switch(v.getId()) {
-            //TODO
+            case R.id.shareFileButton:
+                //TODO
+                break;
+            case R.id.shareUrlButton:
+                selectFile();
+                break;
+        }
+    }
+
+    private void selectFile() {
+        Intent intent = new Intent()
+                .setType("*/*")
+                .setAction(Intent.ACTION_GET_CONTENT);
+
+        startActivityForResult(Intent.createChooser(intent, "Select a file"), SelectFileId);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == SelectFileId && resultCode == RESULT_OK) {
+            Uri selectedFileUri = data.getData();
+            shareUri(selectedFileUri);
+        }
+    }
+
+    private void shareUri(Uri selectedFileUri) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("*/*");
+            intent.putExtra(Intent.EXTRA_STREAM, selectedFileUri);
+            startActivity(Intent.createChooser(intent, "Share..."));
+        } catch(Exception error) {
+            Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 }
